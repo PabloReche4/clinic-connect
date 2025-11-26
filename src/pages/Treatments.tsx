@@ -3,8 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Clock } from "lucide-react";
+import { Clock } from "lucide-react";
 import { toast } from "sonner";
+import { CreateTreatmentDialog } from "@/components/CreateTreatmentDialog";
 
 interface Treatment {
   id: string;
@@ -54,10 +55,7 @@ const Treatments = () => {
           <h1 className="text-3xl font-bold">Tratamientos</h1>
           <p className="text-muted-foreground">Catálogo de tratamientos disponibles</p>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Nuevo Tratamiento
-        </Button>
+        <CreateTreatmentDialog onTreatmentCreated={fetchTreatments} />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -65,10 +63,7 @@ const Treatments = () => {
           <Card className="md:col-span-2">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <p className="text-muted-foreground mb-4">No hay tratamientos registrados</p>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Crear Primer Tratamiento
-              </Button>
+              <CreateTreatmentDialog onTreatmentCreated={fetchTreatments} />
             </CardContent>
           </Card>
         ) : (
