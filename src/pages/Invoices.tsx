@@ -3,11 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { generateInvoicePDF } from "@/utils/pdfGenerator";
 
 interface Invoice {
   id: string;
@@ -39,6 +40,8 @@ const Invoices = () => {
           status,
           total_amount,
           payment_date,
+          payment_method,
+          notes,
           created_at,
           patients (
             full_name
@@ -52,6 +55,46 @@ const Invoices = () => {
       toast.error("Error al cargar facturas: " + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async (invoiceId: string) => {
+    try {
+      const { data: invoice, error: invoiceError } = await supabase
+        .from("invoices")
+        .select(`
+          *,
+          patients (
+            full_name
+          )
+        `)
+        .eq("id", invoiceId)
+        .single();
+
+      if (invoiceError) throw invoiceError;
+
+      const { data: items, error: itemsError } = await supabase
+        .from("invoice_items")
+        .select("*")
+        .eq("invoice_id", invoiceId);
+
+      if (itemsError) throw itemsError;
+
+      generateInvoicePDF({
+        invoice_number: invoice.invoice_number,
+        patient_name: invoice.patients.full_name,
+        created_at: invoice.created_at,
+        payment_date: invoice.payment_date,
+        status: invoice.status,
+        total_amount: invoice.total_amount,
+        payment_method: invoice.payment_method,
+        notes: invoice.notes,
+        items: items,
+      });
+
+      toast.success("PDF generado exitosamente");
+    } catch (error: any) {
+      toast.error("Error al generar PDF: " + error.message);
     }
   };
 
@@ -127,7 +170,12 @@ const Invoices = () => {
                       {format(new Date(invoice.created_at), "d 'de' MMMM, yyyy", { locale: es })}
                     </p>
                   </div>
-                  <Button variant="outline">Ver Detalles</Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(invoice.id)}>
+                      <Download className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline">Ver Detalles</Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

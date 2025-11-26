@@ -3,10 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { generateBudgetPDF } from "@/utils/pdfGenerator";
 
 interface Budget {
   id: string;
@@ -37,6 +39,7 @@ const Budgets = () => {
           total_amount,
           valid_until,
           created_at,
+          notes,
           patients (
             full_name
           )
@@ -49,6 +52,44 @@ const Budgets = () => {
       toast.error("Error al cargar presupuestos: " + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadPDF = async (budgetId: string) => {
+    try {
+      const { data: budget, error: budgetError } = await supabase
+        .from("budgets")
+        .select(`
+          *,
+          patients (
+            full_name
+          )
+        `)
+        .eq("id", budgetId)
+        .single();
+
+      if (budgetError) throw budgetError;
+
+      const { data: items, error: itemsError } = await supabase
+        .from("budget_items")
+        .select("*")
+        .eq("budget_id", budgetId);
+
+      if (itemsError) throw itemsError;
+
+      generateBudgetPDF({
+        patient_name: budget.patients.full_name,
+        created_at: budget.created_at,
+        valid_until: budget.valid_until,
+        status: budget.status,
+        total_amount: budget.total_amount,
+        notes: budget.notes,
+        items: items,
+      });
+
+      toast.success("PDF generado exitosamente");
+    } catch (error: any) {
+      toast.error("Error al generar PDF: " + error.message);
     }
   };
 
@@ -77,10 +118,12 @@ const Budgets = () => {
           <h1 className="text-3xl font-bold">Presupuestos</h1>
           <p className="text-muted-foreground">Gestión de presupuestos para pacientes</p>
         </div>
-        <Button className="gap-2">
-          <Plus className="w-4 h-4" />
-          Nuevo Presupuesto
-        </Button>
+        <Link to="/budgets/new">
+          <Button className="gap-2">
+            <Plus className="w-4 h-4" />
+            Nuevo Presupuesto
+          </Button>
+        </Link>
       </div>
 
       <div className="grid gap-4">
@@ -88,10 +131,12 @@ const Budgets = () => {
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
               <p className="text-muted-foreground mb-4">No hay presupuestos registrados</p>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Crear Primer Presupuesto
-              </Button>
+              <Link to="/budgets/new">
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Crear Primer Presupuesto
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         ) : (
@@ -118,7 +163,12 @@ const Budgets = () => {
                   <p className="text-2xl font-bold text-primary">
                     €{budget.total_amount.toFixed(2)}
                   </p>
-                  <Button variant="outline">Ver Detalles</Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(budget.id)}>
+                      <Download className="w-4 h-4" />
+                    </Button>
+                    <Button variant="outline">Ver Detalles</Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

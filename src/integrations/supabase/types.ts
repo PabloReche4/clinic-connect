@@ -214,6 +214,33 @@ export type Database = {
           },
         ]
       }
+      patient_groups: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       patients: {
         Row: {
           address: string | null
@@ -223,6 +250,7 @@ export type Database = {
           dni: string | null
           email: string | null
           full_name: string
+          group_id: string | null
           id: string
           notes: string | null
           phone: string
@@ -236,6 +264,7 @@ export type Database = {
           dni?: string | null
           email?: string | null
           full_name: string
+          group_id?: string | null
           id?: string
           notes?: string | null
           phone: string
@@ -249,12 +278,21 @@ export type Database = {
           dni?: string | null
           email?: string | null
           full_name?: string
+          group_id?: string | null
           id?: string
           notes?: string | null
           phone?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "patients_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "patient_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
