@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Invoices from "./pages/Invoices";
 import NewInvoice from "./pages/NewInvoice";
 import Budgets from "./pages/Budgets";
+import NewBudget from "./pages/NewBudget";
 import Treatments from "./pages/Treatments";
 import Patients from "./pages/Patients";
 import NotFound from "./pages/NotFound";
@@ -54,6 +55,14 @@ const App = () => (
               element={
                 <DashboardLayout>
                   <Budgets />
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="/budgets/new"
+              element={
+                <DashboardLayout>
+                  <NewBudget />
                 </DashboardLayout>
               }
             />
