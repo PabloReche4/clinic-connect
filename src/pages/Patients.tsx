@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,6 +31,7 @@ interface PatientGroup {
 }
 
 const Patients = () => {
+  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [groups, setGroups] = useState<PatientGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +146,7 @@ const Patients = () => {
                           Nacimiento: {format(new Date(patient.birth_date), "d 'de' MMMM, yyyy", { locale: es })}
                         </p>
                       )}
-                      <Button variant="outline" className="w-full mt-2">
+                      <Button variant="outline" className="w-full mt-2" onClick={() => navigate(`/patients/${patient.id}`)}>
                         Ver Historial
                       </Button>
                     </div>

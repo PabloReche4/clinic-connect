@@ -9,10 +9,14 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Invoices from "./pages/Invoices";
 import NewInvoice from "./pages/NewInvoice";
+import InvoiceDetail from "./pages/InvoiceDetail";
 import Budgets from "./pages/Budgets";
 import NewBudget from "./pages/NewBudget";
+import BudgetDetail from "./pages/BudgetDetail";
 import Treatments from "./pages/Treatments";
 import Patients from "./pages/Patients";
+import PatientDetail from "./pages/PatientDetail";
+import GroupDetail from "./pages/GroupDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +55,14 @@ const App = () => (
               }
             />
             <Route
+              path="/invoices/:id"
+              element={
+                <DashboardLayout>
+                  <InvoiceDetail />
+                </DashboardLayout>
+              }
+            />
+            <Route
               path="/budgets"
               element={
                 <DashboardLayout>
@@ -67,6 +79,14 @@ const App = () => (
               }
             />
             <Route
+              path="/budgets/:id"
+              element={
+                <DashboardLayout>
+                  <BudgetDetail />
+                </DashboardLayout>
+              }
+            />
+            <Route
               path="/treatments"
               element={
                 <DashboardLayout>
@@ -79,6 +99,22 @@ const App = () => (
               element={
                 <DashboardLayout>
                   <Patients />
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="/patients/:id"
+              element={
+                <DashboardLayout>
+                  <PatientDetail />
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="/groups/:id"
+              element={
+                <DashboardLayout>
+                  <GroupDetail />
                 </DashboardLayout>
               }
             />

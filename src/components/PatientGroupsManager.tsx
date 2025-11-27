@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Users, Plus, Trash2 } from "lucide-react";
@@ -22,6 +23,7 @@ interface PatientGroupsManagerProps {
 }
 
 export const PatientGroupsManager = ({ onGroupsChange }: PatientGroupsManagerProps) => {
+  const navigate = useNavigate();
   const [groups, setGroups] = useState<PatientGroup[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -144,7 +146,7 @@ export const PatientGroupsManager = ({ onGroupsChange }: PatientGroupsManagerPro
           <p className="text-sm text-muted-foreground col-span-full">No hay grupos creados</p>
         ) : (
           groups.map((group) => (
-            <Card key={group.id}>
+            <Card key={group.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/groups/${group.id}`)}>
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div className="flex items-center gap-2">

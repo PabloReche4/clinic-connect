@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
 import { toast } from "sonner";
 import { CreateTreatmentDialog } from "@/components/CreateTreatmentDialog";
+import { EditTreatmentDialog } from "@/components/EditTreatmentDialog";
 
 interface Treatment {
   id: string;
@@ -19,6 +20,7 @@ interface Treatment {
 const Treatments = () => {
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingTreatment, setEditingTreatment] = useState<Treatment | null>(null);
 
   useEffect(() => {
     fetchTreatments();
@@ -94,7 +96,7 @@ const Treatments = () => {
                       <span>{treatment.duration_minutes} minutos</span>
                     </div>
                   )}
-                  <Button variant="outline" className="w-full mt-2">
+                  <Button variant="outline" className="w-full mt-2" onClick={() => setEditingTreatment(treatment)}>
                     Editar Tratamiento
                   </Button>
                 </div>
@@ -103,6 +105,15 @@ const Treatments = () => {
           ))
         )}
       </div>
+
+      {editingTreatment && (
+        <EditTreatmentDialog
+          open={!!editingTreatment}
+          onOpenChange={(open) => !open && setEditingTreatment(null)}
+          treatment={editingTreatment}
+          onUpdated={fetchTreatments}
+        />
+      )}
     </div>
   );
 };

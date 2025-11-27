@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,7 @@ interface Invoice {
 }
 
 const Invoices = () => {
+  const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -174,7 +176,7 @@ const Invoices = () => {
                     <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(invoice.id)}>
                       <Download className="w-4 h-4" />
                     </Button>
-                    <Button variant="outline">Ver Detalles</Button>
+                    <Button variant="outline" onClick={() => navigate(`/invoices/${invoice.id}`)}>Ver Detalles</Button>
                   </div>
                 </div>
               </CardContent>

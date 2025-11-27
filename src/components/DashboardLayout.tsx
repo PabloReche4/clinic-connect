@@ -31,7 +31,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
       <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
-        <div className="p-6 border-b border-sidebar-border">
+        <Link to="/" className="p-6 border-b border-sidebar-border hover:bg-sidebar-accent transition-colors">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
               <Activity className="w-6 h-6 text-sidebar-primary-foreground" />
@@ -41,7 +41,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <p className="text-xs text-sidebar-foreground/60">Sistema de Gestión</p>
             </div>
           </div>
-        </div>
+        </Link>
 
         <nav className="flex-1 p-4 space-y-2">
           {menuItems.map((item) => {
