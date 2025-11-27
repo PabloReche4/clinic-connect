@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,7 @@ interface Budget {
 }
 
 const Budgets = () => {
+  const navigate = useNavigate();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -167,7 +169,7 @@ const Budgets = () => {
                     <Button variant="outline" size="sm" onClick={() => handleDownloadPDF(budget.id)}>
                       <Download className="w-4 h-4" />
                     </Button>
-                    <Button variant="outline">Ver Detalles</Button>
+                    <Button variant="outline" onClick={() => navigate(`/budgets/${budget.id}`)}>Ver Detalles</Button>
                   </div>
                 </div>
               </CardContent>
