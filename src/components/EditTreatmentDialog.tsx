@@ -39,6 +39,7 @@ export function EditTreatmentDialog({ open, onOpenChange, treatment, onUpdated }
   const [description, setDescription] = useState(treatment.description || "");
   const [price, setPrice] = useState(treatment.price.toString());
   const [durationMinutes, setDurationMinutes] = useState(treatment.duration_minutes?.toString() || "");
+  const [sessionsCount, setSessionsCount] = useState((treatment as any).sessions_count?.toString() || "1");
   const [isActive, setIsActive] = useState(treatment.is_active ?? true);
   const [loading, setLoading] = useState(false);
 
@@ -54,6 +55,7 @@ export function EditTreatmentDialog({ open, onOpenChange, treatment, onUpdated }
           description: description || null,
           price: parseFloat(price),
           duration_minutes: durationMinutes ? parseInt(durationMinutes) : null,
+          sessions_count: parseInt(sessionsCount),
           is_active: isActive,
         })
         .eq("id", treatment.id);
@@ -119,6 +121,20 @@ export function EditTreatmentDialog({ open, onOpenChange, treatment, onUpdated }
                 onChange={(e) => setDurationMinutes(e.target.value)}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Número de sesiones *</Label>
+            <Input
+              type="number"
+              min="1"
+              value={sessionsCount}
+              onChange={(e) => setSessionsCount(e.target.value)}
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              Para tratamientos de sesión única, poner 1. Para tratamientos con múltiples sesiones (ej: ortodoncia), indicar el número total.
+            </p>
           </div>
 
           <div className="flex items-center justify-between">

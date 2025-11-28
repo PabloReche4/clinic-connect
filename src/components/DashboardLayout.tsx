@@ -3,7 +3,6 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
-  Activity,
   FileText,
   ClipboardList,
   Stethoscope,
@@ -11,6 +10,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import clinicaLogo from "@/assets/clinica-dental-reche-logo.jpg";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -33,11 +33,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
         <Link to="/" className="p-6 border-b border-sidebar-border hover:bg-sidebar-accent transition-colors">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-sidebar-primary rounded-lg flex items-center justify-center">
-              <Activity className="w-6 h-6 text-sidebar-primary-foreground" />
-            </div>
+            <img src={clinicaLogo} alt="Clínica Dental Reche" className="w-10 h-10 rounded-lg object-cover" />
             <div>
-              <h1 className="text-lg font-bold text-sidebar-foreground">Clínica Dental</h1>
+              <h1 className="text-lg font-bold text-sidebar-foreground">Clínica Dental Reche</h1>
               <p className="text-xs text-sidebar-foreground/60">Sistema de Gestión</p>
             </div>
           </div>

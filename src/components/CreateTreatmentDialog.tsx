@@ -21,6 +21,7 @@ export const CreateTreatmentDialog = ({ onTreatmentCreated }: CreateTreatmentDia
     description: "",
     price: "",
     duration_minutes: "",
+    sessions_count: "1",
     is_active: true,
   });
 
@@ -34,6 +35,7 @@ export const CreateTreatmentDialog = ({ onTreatmentCreated }: CreateTreatmentDia
         description: formData.description || null,
         price: parseFloat(formData.price),
         duration_minutes: formData.duration_minutes ? parseInt(formData.duration_minutes) : null,
+        sessions_count: parseInt(formData.sessions_count),
         is_active: formData.is_active,
       }]);
 
@@ -46,6 +48,7 @@ export const CreateTreatmentDialog = ({ onTreatmentCreated }: CreateTreatmentDia
         description: "",
         price: "",
         duration_minutes: "",
+        sessions_count: "1",
         is_active: true,
       });
       onTreatmentCreated();
@@ -115,6 +118,21 @@ export const CreateTreatmentDialog = ({ onTreatmentCreated }: CreateTreatmentDia
                 onChange={(e) => setFormData({ ...formData, duration_minutes: e.target.value })}
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="sessions">Número de sesiones *</Label>
+            <Input
+              id="sessions"
+              type="number"
+              min="1"
+              required
+              value={formData.sessions_count}
+              onChange={(e) => setFormData({ ...formData, sessions_count: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Para tratamientos de sesión única (ej: limpieza), poner 1. Para tratamientos con múltiples sesiones (ej: ortodoncia), indicar el número total de sesiones.
+            </p>
           </div>
 
           <div className="flex items-center space-x-2">

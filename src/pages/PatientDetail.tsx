@@ -4,8 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Pencil, Trash2, Upload, FileImage, X } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -52,6 +55,15 @@ interface Invoice {
   created_at: string;
 }
 
+interface PatientFile {
+  id: string;
+  file_url: string;
+  file_name: string;
+  file_type: string;
+  description: string | null;
+  created_at: string;
+}
+
 const PatientDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -59,8 +71,12 @@ const PatientDetail = () => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [groups, setGroups] = useState<{ id: string; name: string }[]>([]);
+  const [files, setFiles] = useState<PatientFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [fileDescription, setFileDescription] = useState("");
 
   useEffect(() => {
     if (id) fetchPatient();
@@ -68,7 +84,7 @@ const PatientDetail = () => {
 
   const fetchPatient = async () => {
     try {
-      const [patientRes, budgetsRes, invoicesRes, groupsRes] = await Promise.all([
+      const [patientRes, budgetsRes, invoicesRes, groupsRes, filesRes] = await Promise.all([
         supabase
           .from("patients")
           .select(`*, patient_groups (id, name)`)
@@ -85,6 +101,11 @@ const PatientDetail = () => {
           .eq("patient_id", id)
           .order("created_at", { ascending: false }),
         supabase.from("patient_groups").select("id, name").order("name"),
+        supabase
+          .from("patient_files")
+          .select("*")
+          .eq("patient_id", id)
+          .order("created_at", { ascending: false }),
       ]);
 
       if (patientRes.error) throw patientRes.error;
@@ -97,6 +118,7 @@ const PatientDetail = () => {
       setBudgets(budgetsRes.data || []);
       setInvoices(invoicesRes.data || []);
       setGroups(groupsRes.data || []);
+      setFiles(filesRes.data || []);
     } catch (error: any) {
       toast.error("Error al cargar paciente: " + error.message);
     } finally {
@@ -110,6 +132,63 @@ const PatientDetail = () => {
       if (error) throw error;
       toast.success("Paciente eliminado");
       navigate("/patients");
+    } catch (error: any) {
+      toast.error("Error al eliminar: " + error.message);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from("patient-files")
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("patient-files")
+        .getPublicUrl(fileName);
+
+      const { error: dbError } = await supabase.from("patient_files").insert({
+        patient_id: id,
+        file_url: publicUrl,
+        file_name: file.name,
+        file_type: file.type,
+        description: fileDescription || null,
+      });
+
+      if (dbError) throw dbError;
+
+      toast.success("Archivo subido correctamente");
+      setFileDescription("");
+      setUploadDialogOpen(false);
+      fetchPatient();
+    } catch (error: any) {
+      toast.error("Error al subir archivo: " + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteFile = async (fileId: string, fileUrl: string) => {
+    try {
+      const filePath = fileUrl.split("/patient-files/")[1];
+      if (filePath) {
+        await supabase.storage.from("patient-files").remove([filePath]);
+      }
+
+      const { error } = await supabase.from("patient_files").delete().eq("id", fileId);
+      if (error) throw error;
+
+      toast.success("Archivo eliminado");
+      fetchPatient();
     } catch (error: any) {
       toast.error("Error al eliminar: " + error.message);
     }
@@ -302,6 +381,83 @@ const PatientDetail = () => {
                   </div>
                   <span className="font-semibold">€{invoice.total_amount.toFixed(2)}</span>
                 </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Fotos y Radiografías</CardTitle>
+            <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <Upload className="w-4 h-4 mr-2" />
+                  Subir Archivo
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Subir Foto o Radiografía</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Descripción (opcional)</Label>
+                    <Input
+                      value={fileDescription}
+                      onChange={(e) => setFileDescription(e.target.value)}
+                      placeholder="Ej: Radiografía panorámica"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Archivo</Label>
+                    <Input
+                      type="file"
+                      accept="image/*,.pdf"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                    />
+                  </div>
+                  {uploading && <p className="text-sm text-muted-foreground">Subiendo...</p>}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {files.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">No hay archivos</p>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {files.map((file) => (
+                <Card key={file.id} className="overflow-hidden">
+                  <div className="relative aspect-video bg-muted flex items-center justify-center">
+                    {file.file_type.startsWith("image/") ? (
+                      <img src={file.file_url} alt={file.file_name} className="object-cover w-full h-full" />
+                    ) : (
+                      <FileImage className="w-12 h-12 text-muted-foreground" />
+                    )}
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2"
+                      onClick={() => handleDeleteFile(file.id, file.file_url)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <CardContent className="p-3">
+                    <p className="text-sm font-medium truncate">{file.file_name}</p>
+                    {file.description && (
+                      <p className="text-xs text-muted-foreground">{file.description}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(file.created_at), "d/MM/yyyy", { locale: es })}
+                    </p>
+                  </CardContent>
+                </Card>
               ))}
             </div>
           )}

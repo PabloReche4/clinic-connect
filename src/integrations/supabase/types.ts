@@ -214,6 +214,50 @@ export type Database = {
           },
         ]
       }
+      patient_files: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          patient_id: string
+          updated_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          file_name: string
+          file_type: string
+          file_url: string
+          id?: string
+          patient_id: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          patient_id?: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "patient_files_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       patient_groups: {
         Row: {
           created_at: string
@@ -330,6 +374,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           price: number
+          sessions_count: number | null
           updated_at: string | null
         }
         Insert: {
@@ -340,6 +385,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           price: number
+          sessions_count?: number | null
           updated_at?: string | null
         }
         Update: {
@@ -350,6 +396,7 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           price?: number
+          sessions_count?: number | null
           updated_at?: string | null
         }
         Relationships: []
