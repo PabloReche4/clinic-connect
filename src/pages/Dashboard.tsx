@@ -60,7 +60,7 @@ const Dashboard = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Bienvenido a la Clínica Dental</h1>
+        <h1 className="text-3xl font-bold">Bienvenido a Clínica Dental Reche</h1>
         <p className="text-muted-foreground">Sistema de Gestión Interna</p>
       </div>
 

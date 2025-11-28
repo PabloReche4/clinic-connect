@@ -7,8 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Loader2, Activity } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { z } from "zod";
+import clinicaLogo from "@/assets/clinica-dental-reche-logo.jpg";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -99,11 +100,9 @@ const Auth = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-              <Activity className="w-8 h-8 text-primary-foreground" />
-            </div>
+            <img src={clinicaLogo} alt="Clínica Dental Reche" className="w-16 h-16 rounded-full object-cover" />
           </div>
-          <CardTitle className="text-2xl font-bold">Clínica Dental</CardTitle>
+          <CardTitle className="text-2xl font-bold">Clínica Dental Reche</CardTitle>
           <CardDescription>Sistema de Gestión Interna</CardDescription>
         </CardHeader>
         <CardContent>
