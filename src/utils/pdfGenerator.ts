@@ -85,7 +85,7 @@ const addHeader = async (doc: jsPDF) => {
   
   // Contact info
   doc.setFontSize(8);
-  doc.text("Tel: +34 XXX XXX XXX | email@clinicadentalreche.com", 50, 33);
+  doc.text("Tel: (+34) 640 656 956 | dentalreche@gmail.com", 50, 33);
   
   // Decorative line
   doc.setDrawColor(34, 139, 34);
