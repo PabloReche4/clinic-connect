@@ -118,9 +118,9 @@ const BudgetDetail = () => {
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!budget) return;
-    generateBudgetPDF({
+    await generateBudgetPDF({
       patient_name: budget.patients.full_name,
       created_at: budget.created_at,
       valid_until: budget.valid_until,

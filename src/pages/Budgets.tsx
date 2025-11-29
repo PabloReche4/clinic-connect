@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Download } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Download, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -17,6 +18,7 @@ interface Budget {
   total_amount: number;
   valid_until: string | null;
   created_at: string;
+  notes: string | null;
   patients: {
     full_name: string;
   };
@@ -26,6 +28,7 @@ const Budgets = () => {
   const navigate = useNavigate();
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchBudgets();
@@ -57,6 +60,17 @@ const Budgets = () => {
     }
   };
 
+  const filteredBudgets = useMemo(() => {
+    if (!searchTerm) return budgets;
+    const term = searchTerm.toLowerCase();
+    return budgets.filter(
+      (budget) =>
+        budget.patients.full_name.toLowerCase().includes(term) ||
+        budget.status.toLowerCase().includes(term) ||
+        budget.total_amount.toString().includes(term)
+    );
+  }, [budgets, searchTerm]);
+
   const handleDownloadPDF = async (budgetId: string) => {
     try {
       const { data: budget, error: budgetError } = await supabase
@@ -79,7 +93,7 @@ const Budgets = () => {
 
       if (itemsError) throw itemsError;
 
-      generateBudgetPDF({
+      await generateBudgetPDF({
         patient_name: budget.patients.full_name,
         created_at: budget.created_at,
         valid_until: budget.valid_until,
@@ -128,21 +142,35 @@ const Budgets = () => {
         </Link>
       </div>
 
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por paciente, estado o importe..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       <div className="grid gap-4">
-        {budgets.length === 0 ? (
+        {filteredBudgets.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-muted-foreground mb-4">No hay presupuestos registrados</p>
-              <Link to="/budgets/new">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Crear Primer Presupuesto
-                </Button>
-              </Link>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm ? "No se encontraron presupuestos" : "No hay presupuestos registrados"}
+              </p>
+              {!searchTerm && (
+                <Link to="/budgets/new">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Crear Primer Presupuesto
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         ) : (
-          budgets.map((budget) => (
+          filteredBudgets.map((budget) => (
             <Card key={budget.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">
