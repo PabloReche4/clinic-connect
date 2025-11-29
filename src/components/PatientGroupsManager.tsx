@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Users, Plus, Trash2 } from "lucide-react";
+import { Users, Plus, Trash2, Search } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface PatientGroup {
@@ -27,6 +27,7 @@ export const PatientGroupsManager = ({ onGroupsChange }: PatientGroupsManagerPro
   const [groups, setGroups] = useState<PatientGroup[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -49,6 +50,16 @@ export const PatientGroupsManager = ({ onGroupsChange }: PatientGroupsManagerPro
       toast.error("Error al cargar grupos: " + error.message);
     }
   };
+
+  const filteredGroups = useMemo(() => {
+    if (!searchTerm) return groups;
+    const term = searchTerm.toLowerCase();
+    return groups.filter(
+      (group) =>
+        group.name.toLowerCase().includes(term) ||
+        group.description?.toLowerCase().includes(term)
+    );
+  }, [groups, searchTerm]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,11 +152,23 @@ export const PatientGroupsManager = ({ onGroupsChange }: PatientGroupsManagerPro
         </Dialog>
       </div>
 
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar grupos..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-        {groups.length === 0 ? (
-          <p className="text-sm text-muted-foreground col-span-full">No hay grupos creados</p>
+        {filteredGroups.length === 0 ? (
+          <p className="text-sm text-muted-foreground col-span-full">
+            {searchTerm ? "No se encontraron grupos" : "No hay grupos creados"}
+          </p>
         ) : (
-          groups.map((group) => (
+          filteredGroups.map((group) => (
             <Card key={group.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/groups/${group.id}`)}>
               <CardHeader>
                 <div className="flex justify-between items-start">
@@ -155,7 +178,7 @@ export const PatientGroupsManager = ({ onGroupsChange }: PatientGroupsManagerPro
                   </div>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => e.stopPropagation()}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </AlertDialogTrigger>

@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Mail, Phone, MapPin, Search } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -35,6 +36,7 @@ const Patients = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [groups, setGroups] = useState<PatientGroup[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchPatients();
@@ -76,6 +78,19 @@ const Patients = () => {
     }
   };
 
+  const filteredPatients = useMemo(() => {
+    if (!searchTerm) return patients;
+    const term = searchTerm.toLowerCase();
+    return patients.filter(
+      (patient) =>
+        patient.full_name.toLowerCase().includes(term) ||
+        patient.email?.toLowerCase().includes(term) ||
+        patient.phone.includes(term) ||
+        patient.dni?.toLowerCase().includes(term) ||
+        patient.patient_groups?.name.toLowerCase().includes(term)
+    );
+  }, [patients, searchTerm]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -101,16 +116,28 @@ const Patients = () => {
         </TabsList>
 
         <TabsContent value="patients" className="space-y-4">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nombre, email, teléfono, DNI o grupo..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {patients.length === 0 ? (
+            {filteredPatients.length === 0 ? (
               <Card className="md:col-span-2 lg:col-span-3">
                 <CardContent className="flex flex-col items-center justify-center py-12">
-                  <p className="text-muted-foreground mb-4">No hay pacientes registrados</p>
-                  <CreatePatientDialog onPatientCreated={fetchPatients} groups={groups} />
+                  <p className="text-muted-foreground mb-4">
+                    {searchTerm ? "No se encontraron pacientes" : "No hay pacientes registrados"}
+                  </p>
+                  {!searchTerm && <CreatePatientDialog onPatientCreated={fetchPatients} groups={groups} />}
                 </CardContent>
               </Card>
             ) : (
-              patients.map((patient) => (
+              filteredPatients.map((patient) => (
                 <Card key={patient.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg">{patient.full_name}</CardTitle>

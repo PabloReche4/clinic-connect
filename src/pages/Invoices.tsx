@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Download } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Download, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { format } from "date-fns";
@@ -17,6 +18,8 @@ interface Invoice {
   status: string;
   total_amount: number;
   payment_date: string | null;
+  payment_method: string | null;
+  notes: string | null;
   created_at: string;
   patients: {
     full_name: string;
@@ -27,6 +30,7 @@ const Invoices = () => {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchInvoices();
@@ -60,6 +64,18 @@ const Invoices = () => {
     }
   };
 
+  const filteredInvoices = useMemo(() => {
+    if (!searchTerm) return invoices;
+    const term = searchTerm.toLowerCase();
+    return invoices.filter(
+      (invoice) =>
+        invoice.invoice_number.toLowerCase().includes(term) ||
+        invoice.patients.full_name.toLowerCase().includes(term) ||
+        invoice.status.toLowerCase().includes(term) ||
+        invoice.total_amount.toString().includes(term)
+    );
+  }, [invoices, searchTerm]);
+
   const handleDownloadPDF = async (invoiceId: string) => {
     try {
       const { data: invoice, error: invoiceError } = await supabase
@@ -82,7 +98,7 @@ const Invoices = () => {
 
       if (itemsError) throw itemsError;
 
-      generateInvoicePDF({
+      await generateInvoicePDF({
         invoice_number: invoice.invoice_number,
         patient_name: invoice.patients.full_name,
         created_at: invoice.created_at,
@@ -133,21 +149,35 @@ const Invoices = () => {
         </Link>
       </div>
 
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por número, paciente, estado o importe..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       <div className="grid gap-4">
-        {invoices.length === 0 ? (
+        {filteredInvoices.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-muted-foreground mb-4">No hay facturas registradas</p>
-              <Link to="/invoices/new">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Crear Primera Factura
-                </Button>
-              </Link>
+              <p className="text-muted-foreground mb-4">
+                {searchTerm ? "No se encontraron facturas" : "No hay facturas registradas"}
+              </p>
+              {!searchTerm && (
+                <Link to="/invoices/new">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Crear Primera Factura
+                  </Button>
+                </Link>
+              )}
             </CardContent>
           </Card>
         ) : (
-          invoices.map((invoice) => (
+          filteredInvoices.map((invoice) => (
             <Card key={invoice.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">

@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Clock, Search } from "lucide-react";
 import { toast } from "sonner";
 import { CreateTreatmentDialog } from "@/components/CreateTreatmentDialog";
 import { EditTreatmentDialog } from "@/components/EditTreatmentDialog";
@@ -21,6 +22,7 @@ const Treatments = () => {
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingTreatment, setEditingTreatment] = useState<Treatment | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchTreatments();
@@ -42,6 +44,17 @@ const Treatments = () => {
     }
   };
 
+  const filteredTreatments = useMemo(() => {
+    if (!searchTerm) return treatments;
+    const term = searchTerm.toLowerCase();
+    return treatments.filter(
+      (treatment) =>
+        treatment.name.toLowerCase().includes(term) ||
+        treatment.description?.toLowerCase().includes(term) ||
+        treatment.price.toString().includes(term)
+    );
+  }, [treatments, searchTerm]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -60,16 +73,28 @@ const Treatments = () => {
         <CreateTreatmentDialog onTreatmentCreated={fetchTreatments} />
       </div>
 
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nombre, descripción o precio..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2">
-        {treatments.length === 0 ? (
+        {filteredTreatments.length === 0 ? (
           <Card className="md:col-span-2">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <p className="text-muted-foreground mb-4">No hay tratamientos registrados</p>
-              <CreateTreatmentDialog onTreatmentCreated={fetchTreatments} />
+              <p className="text-muted-foreground mb-4">
+                {searchTerm ? "No se encontraron tratamientos" : "No hay tratamientos registrados"}
+              </p>
+              {!searchTerm && <CreateTreatmentDialog onTreatmentCreated={fetchTreatments} />}
             </CardContent>
           </Card>
         ) : (
-          treatments.map((treatment) => (
+          filteredTreatments.map((treatment) => (
             <Card key={treatment.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
                 <div className="flex justify-between items-start">

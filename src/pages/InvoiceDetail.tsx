@@ -125,9 +125,9 @@ const InvoiceDetail = () => {
     }
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     if (!invoice) return;
-    generateInvoicePDF({
+    await generateInvoicePDF({
       invoice_number: invoice.invoice_number,
       patient_name: invoice.patients.full_name,
       created_at: invoice.created_at,
