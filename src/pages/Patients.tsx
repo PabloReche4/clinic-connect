@@ -3,14 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Mail, Phone, MapPin, Search } from "lucide-react";
+import { Mail, Phone, MapPin, Search, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CreatePatientDialog } from "@/components/CreatePatientDialog";
-import { PatientGroupsManager } from "@/components/PatientGroupsManager";
 
 interface Patient {
   id: string;
@@ -21,6 +19,7 @@ interface Patient {
   dni: string | null;
   birth_date: string | null;
   created_at: string;
+  allergies: string | null;
   patient_groups: {
     name: string;
   } | null;
@@ -109,37 +108,32 @@ const Patients = () => {
         <CreatePatientDialog onPatientCreated={fetchPatients} groups={groups} />
       </div>
 
-      <Tabs defaultValue="patients" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="patients">Lista de Pacientes</TabsTrigger>
-          <TabsTrigger value="groups">Grupos</TabsTrigger>
-        </TabsList>
+      <div className="relative max-w-md">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar por nombre, email, teléfono, DNI o grupo..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
 
-        <TabsContent value="patients" className="space-y-4">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por nombre, email, teléfono, DNI o grupo..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredPatients.length === 0 ? (
-              <Card className="md:col-span-2 lg:col-span-3">
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <p className="text-muted-foreground mb-4">
-                    {searchTerm ? "No se encontraron pacientes" : "No hay pacientes registrados"}
-                  </p>
-                  {!searchTerm && <CreatePatientDialog onPatientCreated={fetchPatients} groups={groups} />}
-                </CardContent>
-              </Card>
-            ) : (
-              filteredPatients.map((patient) => (
-                <Card key={patient.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredPatients.length === 0 ? (
+          <Card className="md:col-span-2 lg:col-span-3">
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <p className="text-muted-foreground mb-4">
+                {searchTerm ? "No se encontraron pacientes" : "No hay pacientes registrados"}
+              </p>
+              {!searchTerm && <CreatePatientDialog onPatientCreated={fetchPatients} groups={groups} />}
+            </CardContent>
+          </Card>
+        ) : (
+          filteredPatients.map((patient) => (
+            <Card key={patient.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
                     <CardTitle className="text-lg">{patient.full_name}</CardTitle>
                     <CardDescription>
                       {patient.dni && `DNI: ${patient.dni}`}
@@ -149,45 +143,46 @@ const Patients = () => {
                         </span>
                       )}
                     </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {patient.email && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="w-4 h-4 text-muted-foreground" />
-                          <span className="truncate">{patient.email}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
-                        <span>{patient.phone}</span>
-                      </div>
-                      {patient.address && (
-                        <div className="flex items-start gap-2 text-sm">
-                          <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
-                          <span className="line-clamp-2">{patient.address}</span>
-                        </div>
-                      )}
-                      {patient.birth_date && (
-                        <p className="text-sm text-muted-foreground">
-                          Nacimiento: {format(new Date(patient.birth_date), "d 'de' MMMM, yyyy", { locale: es })}
-                        </p>
-                      )}
-                      <Button variant="outline" className="w-full mt-2" onClick={() => navigate(`/patients/${patient.id}`)}>
-                        Ver Historial
-                      </Button>
+                  </div>
+                  {patient.allergies && (
+                    <div className="flex items-center gap-1 text-destructive" title="Tiene alergias">
+                      <AlertTriangle className="w-4 h-4" />
                     </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="groups">
-          <PatientGroupsManager onGroupsChange={fetchGroups} />
-        </TabsContent>
-      </Tabs>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {patient.email && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <span className="truncate">{patient.email}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-sm">
+                    <Phone className="w-4 h-4 text-muted-foreground" />
+                    <span>{patient.phone}</span>
+                  </div>
+                  {patient.address && (
+                    <div className="flex items-start gap-2 text-sm">
+                      <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                      <span className="line-clamp-2">{patient.address}</span>
+                    </div>
+                  )}
+                  {patient.birth_date && (
+                    <p className="text-sm text-muted-foreground">
+                      Nacimiento: {format(new Date(patient.birth_date), "d 'de' MMMM, yyyy", { locale: es })}
+                    </p>
+                  )}
+                  <Button variant="outline" className="w-full mt-2" onClick={() => navigate(`/patients/${patient.id}`)}>
+                    Ver Historial
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };

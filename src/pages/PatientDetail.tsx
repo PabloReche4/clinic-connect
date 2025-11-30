@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Mail, Phone, MapPin, Calendar, Pencil, Trash2, Upload, FileImage, X } from "lucide-react";
+import { ArrowLeft, Mail, Phone, MapPin, Calendar, Pencil, Trash2, Upload, FileImage, X, AlertTriangle, Pill, HeartPulse } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,10 @@ interface Patient {
   dni: string | null;
   birth_date: string | null;
   notes: string | null;
+  allergies: string | null;
+  medical_conditions: string | null;
+  current_medications: string | null;
+  medical_notes: string | null;
   created_at: string;
   patient_groups: {
     id: string;
@@ -327,6 +331,55 @@ const PatientDetail = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Clinical History Card */}
+      <Card className={patient.allergies ? "border-destructive/50" : ""}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <HeartPulse className="w-5 h-5" />
+            Historial Clínico
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {patient.allergies && (
+            <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+              <div className="flex items-center gap-2 text-destructive font-semibold mb-1">
+                <AlertTriangle className="w-4 h-4" />
+                Alergias a Medicamentos
+              </div>
+              <p className="text-sm">{patient.allergies}</p>
+            </div>
+          )}
+          
+          {patient.medical_conditions && (
+            <div>
+              <span className="text-muted-foreground font-medium">Condiciones Médicas:</span>
+              <p className="mt-1">{patient.medical_conditions}</p>
+            </div>
+          )}
+          
+          {patient.current_medications && (
+            <div className="flex items-start gap-2">
+              <Pill className="w-4 h-4 text-muted-foreground mt-1" />
+              <div>
+                <span className="text-muted-foreground font-medium">Medicación Actual:</span>
+                <p className="mt-1">{patient.current_medications}</p>
+              </div>
+            </div>
+          )}
+          
+          {patient.medical_notes && (
+            <div>
+              <span className="text-muted-foreground font-medium">Notas Médicas:</span>
+              <p className="mt-1">{patient.medical_notes}</p>
+            </div>
+          )}
+          
+          {!patient.allergies && !patient.medical_conditions && !patient.current_medications && !patient.medical_notes && (
+            <p className="text-muted-foreground text-center py-4">No hay información clínica registrada</p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
