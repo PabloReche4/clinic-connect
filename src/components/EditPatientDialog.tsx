@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,6 +20,10 @@ interface EditPatientDialogProps {
     dni: string | null;
     birth_date: string | null;
     notes: string | null;
+    allergies: string | null;
+    medical_conditions: string | null;
+    current_medications: string | null;
+    medical_notes: string | null;
     patient_groups: { id: string; name: string } | null;
   };
   groups: { id: string; name: string }[];
@@ -35,7 +39,26 @@ export function EditPatientDialog({ open, onOpenChange, patient, groups, onUpdat
   const [birthDate, setBirthDate] = useState(patient.birth_date || "");
   const [notes, setNotes] = useState(patient.notes || "");
   const [groupId, setGroupId] = useState(patient.patient_groups?.id || "none");
+  const [allergies, setAllergies] = useState(patient.allergies || "");
+  const [medicalConditions, setMedicalConditions] = useState(patient.medical_conditions || "");
+  const [currentMedications, setCurrentMedications] = useState(patient.current_medications || "");
+  const [medicalNotes, setMedicalNotes] = useState(patient.medical_notes || "");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setFullName(patient.full_name);
+    setEmail(patient.email || "");
+    setPhone(patient.phone);
+    setAddress(patient.address || "");
+    setDni(patient.dni || "");
+    setBirthDate(patient.birth_date || "");
+    setNotes(patient.notes || "");
+    setGroupId(patient.patient_groups?.id || "none");
+    setAllergies(patient.allergies || "");
+    setMedicalConditions(patient.medical_conditions || "");
+    setCurrentMedications(patient.current_medications || "");
+    setMedicalNotes(patient.medical_notes || "");
+  }, [patient]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +76,10 @@ export function EditPatientDialog({ open, onOpenChange, patient, groups, onUpdat
           birth_date: birthDate || null,
           notes: notes || null,
           group_id: groupId === "none" ? null : groupId,
+          allergies: allergies || null,
+          medical_conditions: medicalConditions || null,
+          current_medications: currentMedications || null,
+          medical_notes: medicalNotes || null,
         })
         .eq("id", patient.id);
 
@@ -125,7 +152,52 @@ export function EditPatientDialog({ open, onOpenChange, patient, groups, onUpdat
 
           <div className="space-y-2">
             <Label>Notas</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} />
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h3 className="font-semibold text-lg mb-4 text-destructive">Historial Clínico</h3>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-destructive">Alergias a Medicamentos</Label>
+                <Textarea
+                  value={allergies}
+                  onChange={(e) => setAllergies(e.target.value)}
+                  placeholder="Ej: Penicilina, Ibuprofeno..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Condiciones Médicas</Label>
+                <Textarea
+                  value={medicalConditions}
+                  onChange={(e) => setMedicalConditions(e.target.value)}
+                  placeholder="Ej: Diabetes, Hipertensión..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Medicación Actual</Label>
+                <Textarea
+                  value={currentMedications}
+                  onChange={(e) => setCurrentMedications(e.target.value)}
+                  placeholder="Ej: Metformina 850mg..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Notas Médicas Adicionales</Label>
+                <Textarea
+                  value={medicalNotes}
+                  onChange={(e) => setMedicalNotes(e.target.value)}
+                  rows={2}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">

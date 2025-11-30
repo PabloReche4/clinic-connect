@@ -8,6 +8,8 @@ import {
   Stethoscope,
   Users,
   LogOut,
+  CalendarDays,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import clinicaLogo from "@/assets/clinica-dental-reche-logo.jpg";
@@ -17,8 +19,10 @@ interface DashboardLayoutProps {
 }
 
 const menuItems = [
+  { icon: CalendarDays, label: "Citas", path: "/appointments" },
   { icon: FileText, label: "Facturas", path: "/invoices" },
   { icon: ClipboardList, label: "Presupuestos", path: "/budgets" },
+  { icon: TrendingUp, label: "Ingresos", path: "/revenue" },
   { icon: Stethoscope, label: "Tratamientos", path: "/treatments" },
   { icon: Users, label: "Pacientes", path: "/patients" },
 ];

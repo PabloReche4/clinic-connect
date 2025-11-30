@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string
+          created_by: string | null
+          duration_minutes: number | null
+          id: string
+          notes: string | null
+          patient_email: string | null
+          patient_id: string | null
+          patient_name: string
+          patient_phone: string | null
+          source: string | null
+          status: string
+          treatment_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          patient_email?: string | null
+          patient_id?: string | null
+          patient_name: string
+          patient_phone?: string | null
+          source?: string | null
+          status?: string
+          treatment_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string
+          created_by?: string | null
+          duration_minutes?: number | null
+          id?: string
+          notes?: string | null
+          patient_email?: string | null
+          patient_id?: string | null
+          patient_name?: string
+          patient_phone?: string | null
+          source?: string | null
+          status?: string
+          treatment_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_items: {
         Row: {
           budget_id: string
@@ -288,42 +350,54 @@ export type Database = {
       patients: {
         Row: {
           address: string | null
+          allergies: string | null
           birth_date: string | null
           created_at: string | null
           created_by: string | null
+          current_medications: string | null
           dni: string | null
           email: string | null
           full_name: string
           group_id: string | null
           id: string
+          medical_conditions: string | null
+          medical_notes: string | null
           notes: string | null
           phone: string
           updated_at: string | null
         }
         Insert: {
           address?: string | null
+          allergies?: string | null
           birth_date?: string | null
           created_at?: string | null
           created_by?: string | null
+          current_medications?: string | null
           dni?: string | null
           email?: string | null
           full_name: string
           group_id?: string | null
           id?: string
+          medical_conditions?: string | null
+          medical_notes?: string | null
           notes?: string | null
           phone: string
           updated_at?: string | null
         }
         Update: {
           address?: string | null
+          allergies?: string | null
           birth_date?: string | null
           created_at?: string | null
           created_by?: string | null
+          current_medications?: string | null
           dni?: string | null
           email?: string | null
           full_name?: string
           group_id?: string | null
           id?: string
+          medical_conditions?: string | null
+          medical_notes?: string | null
           notes?: string | null
           phone?: string
           updated_at?: string | null

@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, ClipboardList, Stethoscope, Users } from "lucide-react";
+import { FileText, ClipboardList, Stethoscope, Users, CalendarDays, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
@@ -28,6 +28,13 @@ const Dashboard = () => {
 
   const quickLinks = [
     {
+      title: "Citas",
+      description: "Calendario de citas",
+      icon: CalendarDays,
+      path: "/appointments",
+      color: "bg-teal-500",
+    },
+    {
       title: "Facturas",
       description: "Gestionar facturas y pagos",
       icon: FileText,
@@ -40,6 +47,13 @@ const Dashboard = () => {
       icon: ClipboardList,
       path: "/budgets",
       color: "bg-green-500",
+    },
+    {
+      title: "Ingresos",
+      description: "Resumen de facturación",
+      icon: TrendingUp,
+      path: "/revenue",
+      color: "bg-emerald-500",
     },
     {
       title: "Tratamientos",
@@ -64,7 +78,7 @@ const Dashboard = () => {
         <p className="text-muted-foreground">Sistema de Gestión Interna</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {quickLinks.map((link) => {
           const Icon = link.icon;
           return (

@@ -16,7 +16,8 @@ import BudgetDetail from "./pages/BudgetDetail";
 import Treatments from "./pages/Treatments";
 import Patients from "./pages/Patients";
 import PatientDetail from "./pages/PatientDetail";
-import GroupDetail from "./pages/GroupDetail";
+import Appointments from "./pages/Appointments";
+import Revenue from "./pages/Revenue";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -111,10 +112,18 @@ const App = () => (
               }
             />
             <Route
-              path="/groups/:id"
+              path="/appointments"
               element={
                 <DashboardLayout>
-                  <GroupDetail />
+                  <Appointments />
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="/revenue"
+              element={
+                <DashboardLayout>
+                  <Revenue />
                 </DashboardLayout>
               }
             />

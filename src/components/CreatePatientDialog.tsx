@@ -31,6 +31,10 @@ export const CreatePatientDialog = ({ onPatientCreated, groups }: CreatePatientD
     birth_date: "",
     group_id: "",
     notes: "",
+    allergies: "",
+    medical_conditions: "",
+    current_medications: "",
+    medical_notes: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,6 +51,10 @@ export const CreatePatientDialog = ({ onPatientCreated, groups }: CreatePatientD
         birth_date: formData.birth_date || null,
         group_id: formData.group_id || null,
         notes: formData.notes || null,
+        allergies: formData.allergies || null,
+        medical_conditions: formData.medical_conditions || null,
+        current_medications: formData.current_medications || null,
+        medical_notes: formData.medical_notes || null,
       }]);
 
       if (error) throw error;
@@ -62,6 +70,10 @@ export const CreatePatientDialog = ({ onPatientCreated, groups }: CreatePatientD
         birth_date: "",
         group_id: "",
         notes: "",
+        allergies: "",
+        medical_conditions: "",
+        current_medications: "",
+        medical_notes: "",
       });
       onPatientCreated();
     } catch (error: any) {
@@ -170,8 +182,57 @@ export const CreatePatientDialog = ({ onPatientCreated, groups }: CreatePatientD
               id="notes"
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              rows={3}
+              rows={2}
             />
+          </div>
+
+          <div className="border-t pt-4 mt-4">
+            <h3 className="font-semibold text-lg mb-4 text-destructive">Historial Clínico</h3>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="allergies" className="text-destructive">Alergias a Medicamentos</Label>
+                <Textarea
+                  id="allergies"
+                  value={formData.allergies}
+                  onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
+                  placeholder="Ej: Penicilina, Ibuprofeno..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="medical_conditions">Condiciones Médicas</Label>
+                <Textarea
+                  id="medical_conditions"
+                  value={formData.medical_conditions}
+                  onChange={(e) => setFormData({ ...formData, medical_conditions: e.target.value })}
+                  placeholder="Ej: Diabetes, Hipertensión..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="current_medications">Medicación Actual</Label>
+                <Textarea
+                  id="current_medications"
+                  value={formData.current_medications}
+                  onChange={(e) => setFormData({ ...formData, current_medications: e.target.value })}
+                  placeholder="Ej: Metformina 850mg..."
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="medical_notes">Notas Médicas Adicionales</Label>
+                <Textarea
+                  id="medical_notes"
+                  value={formData.medical_notes}
+                  onChange={(e) => setFormData({ ...formData, medical_notes: e.target.value })}
+                  rows={2}
+                />
+              </div>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2">
