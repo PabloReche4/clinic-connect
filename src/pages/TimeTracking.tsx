@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, LogIn, LogOut, Calendar, User } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Clock, LogIn, LogOut, Calendar, User, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
@@ -25,6 +27,11 @@ interface Profile {
   full_name: string;
 }
 
+interface TimePair {
+  entry: TimeRecord | null;
+  exit: TimeRecord | null;
+}
+
 const TimeTracking = () => {
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -32,6 +39,15 @@ const TimeTracking = () => {
   const [startDate, setStartDate] = useState(format(startOfMonth(new Date()), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(new Date()), "yyyy-MM-dd"));
   const [selectedUserId, setSelectedUserId] = useState<string>("all");
+  
+  // Form state for manual registration
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [formUserId, setFormUserId] = useState("");
+  const [formDate, setFormDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [formEntryTime, setFormEntryTime] = useState("");
+  const [formExitTime, setFormExitTime] = useState("");
+  const [formNotes, setFormNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchRecords();
@@ -73,6 +89,69 @@ const TimeTracking = () => {
     return profile?.full_name || "Usuario desconocido";
   };
 
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formUserId) {
+      toast.error("Selecciona un trabajador");
+      return;
+    }
+    
+    if (!formEntryTime) {
+      toast.error("Indica la hora de entrada");
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const recordsToInsert = [];
+      
+      // Add entry record
+      const entryDateTime = new Date(`${formDate}T${formEntryTime}:00`);
+      recordsToInsert.push({
+        user_id: formUserId,
+        record_type: "entry",
+        recorded_at: entryDateTime.toISOString(),
+        notes: formNotes || null,
+        source: "manual",
+      });
+
+      // Add exit record if provided
+      if (formExitTime) {
+        const exitDateTime = new Date(`${formDate}T${formExitTime}:00`);
+        recordsToInsert.push({
+          user_id: formUserId,
+          record_type: "exit",
+          recorded_at: exitDateTime.toISOString(),
+          notes: formNotes || null,
+          source: "manual",
+        });
+      }
+
+      const { error } = await supabase.from("time_records").insert(recordsToInsert);
+
+      if (error) throw error;
+
+      toast.success("Registro añadido correctamente");
+      setDialogOpen(false);
+      resetForm();
+      fetchRecords();
+    } catch (error: any) {
+      toast.error("Error al registrar: " + error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormUserId("");
+    setFormDate(format(new Date(), "yyyy-MM-dd"));
+    setFormEntryTime("");
+    setFormExitTime("");
+    setFormNotes("");
+  };
+
   const filteredRecords = useMemo(() => {
     return records.filter((record) => {
       const recordDate = new Date(record.recorded_at);
@@ -87,52 +166,76 @@ const TimeTracking = () => {
     });
   }, [records, startDate, endDate, selectedUserId]);
 
-  // Agrupar registros por día y usuario
-  const groupedRecords = useMemo(() => {
-    const groups: Record<string, Record<string, TimeRecord[]>> = {};
+  // Agrupar registros por día y usuario, y emparejar entradas con salidas
+  const groupedRecordsWithPairs = useMemo(() => {
+    const groups: Record<string, Record<string, { pairs: TimePair[]; totalMinutes: number }>> = {};
 
+    // Primero agrupar por día y usuario
+    const tempGroups: Record<string, Record<string, TimeRecord[]>> = {};
+    
     filteredRecords.forEach((record) => {
       const dateKey = format(new Date(record.recorded_at), "yyyy-MM-dd");
       const userId = record.user_id;
 
-      if (!groups[dateKey]) {
-        groups[dateKey] = {};
+      if (!tempGroups[dateKey]) {
+        tempGroups[dateKey] = {};
       }
-      if (!groups[dateKey][userId]) {
-        groups[dateKey][userId] = [];
+      if (!tempGroups[dateKey][userId]) {
+        tempGroups[dateKey][userId] = [];
       }
-      groups[dateKey][userId].push(record);
+      tempGroups[dateKey][userId].push(record);
     });
 
-    // Ordenar registros dentro de cada grupo por hora
-    Object.keys(groups).forEach((dateKey) => {
-      Object.keys(groups[dateKey]).forEach((userId) => {
-        groups[dateKey][userId].sort(
+    // Ordenar y emparejar
+    Object.keys(tempGroups).forEach((dateKey) => {
+      groups[dateKey] = {};
+      
+      Object.keys(tempGroups[dateKey]).forEach((userId) => {
+        const userRecords = tempGroups[dateKey][userId].sort(
           (a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime()
         );
+
+        const pairs: TimePair[] = [];
+        let currentEntry: TimeRecord | null = null;
+        let totalMinutes = 0;
+
+        userRecords.forEach((record) => {
+          if (record.record_type === "entry") {
+            if (currentEntry) {
+              // Si hay una entrada sin salida, guardarla
+              pairs.push({ entry: currentEntry, exit: null });
+            }
+            currentEntry = record;
+          } else if (record.record_type === "exit") {
+            if (currentEntry) {
+              const entryTime = new Date(currentEntry.recorded_at);
+              const exitTime = new Date(record.recorded_at);
+              totalMinutes += (exitTime.getTime() - entryTime.getTime()) / (1000 * 60);
+              pairs.push({ entry: currentEntry, exit: record });
+              currentEntry = null;
+            } else {
+              // Salida sin entrada
+              pairs.push({ entry: null, exit: record });
+            }
+          }
+        });
+
+        // Si quedó una entrada sin salida
+        if (currentEntry) {
+          pairs.push({ entry: currentEntry, exit: null });
+        }
+
+        groups[dateKey][userId] = { pairs, totalMinutes };
       });
     });
 
     return groups;
   }, [filteredRecords]);
 
-  const calculateDayHours = (dayRecords: TimeRecord[]) => {
-    let totalMinutes = 0;
-    let entryTime: Date | null = null;
-
-    dayRecords.forEach((record) => {
-      if (record.record_type === "entry") {
-        entryTime = new Date(record.recorded_at);
-      } else if (record.record_type === "exit" && entryTime) {
-        const exitTime = new Date(record.recorded_at);
-        totalMinutes += (exitTime.getTime() - entryTime.getTime()) / (1000 * 60);
-        entryTime = null;
-      }
-    });
-
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.round(totalMinutes % 60);
-    return { hours, minutes, totalMinutes };
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    return `${hours}h ${mins}min`;
   };
 
   const setQuickRange = (range: string) => {
@@ -158,13 +261,94 @@ const TimeTracking = () => {
     );
   }
 
-  const sortedDates = Object.keys(groupedRecords).sort((a, b) => b.localeCompare(a));
+  const sortedDates = Object.keys(groupedRecordsWithPairs).sort((a, b) => b.localeCompare(a));
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Registro Horario</h1>
-        <p className="text-muted-foreground">Control de entradas y salidas de trabajadores</p>
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold">Registro Horario</h1>
+          <p className="text-muted-foreground">Control de entradas y salidas de trabajadores</p>
+        </div>
+        
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Registro Manual
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Añadir Registro Manual</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleManualSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label>Trabajador *</Label>
+                <Select value={formUserId} onValueChange={setFormUserId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar trabajador" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {profiles.map((profile) => (
+                      <SelectItem key={profile.id} value={profile.id}>
+                        {profile.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Fecha *</Label>
+                <Input
+                  type="date"
+                  value={formDate}
+                  onChange={(e) => setFormDate(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Hora Entrada *</Label>
+                  <Input
+                    type="time"
+                    value={formEntryTime}
+                    onChange={(e) => setFormEntryTime(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Hora Salida</Label>
+                  <Input
+                    type="time"
+                    value={formExitTime}
+                    onChange={(e) => setFormExitTime(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Notas (opcional)</Label>
+                <Input
+                  value={formNotes}
+                  onChange={(e) => setFormNotes(e.target.value)}
+                  placeholder="Ej: Turno de mañana"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={submitting}>
+                  {submitting ? "Guardando..." : "Guardar"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -237,42 +421,77 @@ const TimeTracking = () => {
                 {format(new Date(dateKey), "EEEE, d 'de' MMMM yyyy", { locale: es })}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {Object.keys(groupedRecords[dateKey]).map((userId) => {
-                const userRecords = groupedRecords[dateKey][userId];
-                const { hours, minutes } = calculateDayHours(userRecords);
-
-                return (
-                  <div key={userId} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-2">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-semibold">{getProfileName(userId)}</span>
-                      </div>
-                      <Badge variant="outline">
-                        {hours}h {minutes}min
-                      </Badge>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {userRecords.map((record) => (
-                        <Badge
-                          key={record.id}
-                          variant={record.record_type === "entry" ? "default" : "secondary"}
-                          className="flex items-center gap-1"
-                        >
-                          {record.record_type === "entry" ? (
-                            <LogIn className="w-3 h-3" />
-                          ) : (
-                            <LogOut className="w-3 h-3" />
-                          )}
-                          {format(new Date(record.recorded_at), "HH:mm")}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })}
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Trabajador</TableHead>
+                    <TableHead>Entrada</TableHead>
+                    <TableHead>Salida</TableHead>
+                    <TableHead>Duración</TableHead>
+                    <TableHead>Origen</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Object.keys(groupedRecordsWithPairs[dateKey]).map((userId) => {
+                    const { pairs, totalMinutes } = groupedRecordsWithPairs[dateKey][userId];
+                    
+                    return pairs.map((pair, index) => {
+                      const pairDuration = pair.entry && pair.exit
+                        ? (new Date(pair.exit.recorded_at).getTime() - new Date(pair.entry.recorded_at).getTime()) / (1000 * 60)
+                        : 0;
+                      
+                      return (
+                        <TableRow key={`${userId}-${index}`}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <User className="w-4 h-4 text-muted-foreground" />
+                              {getProfileName(userId)}
+                              {index === pairs.length - 1 && pairs.length > 1 && (
+                                <Badge variant="outline" className="ml-2">
+                                  Total: {formatDuration(totalMinutes)}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {pair.entry ? (
+                              <Badge variant="default" className="flex items-center gap-1 w-fit">
+                                <LogIn className="w-3 h-3" />
+                                {format(new Date(pair.entry.recorded_at), "HH:mm")}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {pair.exit ? (
+                              <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                                <LogOut className="w-3 h-3" />
+                                {format(new Date(pair.exit.recorded_at), "HH:mm")}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">En curso...</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {pair.entry && pair.exit ? (
+                              formatDuration(pairDuration)
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {pair.entry?.source === "manual" || pair.exit?.source === "manual" ? "Manual" : "Dispositivo"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    });
+                  })}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         ))
