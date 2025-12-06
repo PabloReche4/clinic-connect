@@ -439,6 +439,36 @@ export type Database = {
         }
         Relationships: []
       }
+      time_records: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          record_type: string
+          recorded_at: string
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          record_type: string
+          recorded_at?: string
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          record_type?: string
+          recorded_at?: string
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       treatments: {
         Row: {
           created_at: string | null

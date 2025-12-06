@@ -18,6 +18,7 @@ import Patients from "./pages/Patients";
 import PatientDetail from "./pages/PatientDetail";
 import Appointments from "./pages/Appointments";
 import Revenue from "./pages/Revenue";
+import TimeTracking from "./pages/TimeTracking";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -124,6 +125,14 @@ const App = () => (
               element={
                 <DashboardLayout>
                   <Revenue />
+                </DashboardLayout>
+              }
+            />
+            <Route
+              path="/time-tracking"
+              element={
+                <DashboardLayout>
+                  <TimeTracking />
                 </DashboardLayout>
               }
             />

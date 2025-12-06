@@ -210,6 +210,7 @@ const NewInvoice = () => {
                   <SelectItem value="efectivo">Efectivo</SelectItem>
                   <SelectItem value="tarjeta">Tarjeta</SelectItem>
                   <SelectItem value="transferencia">Transferencia</SelectItem>
+                  <SelectItem value="financiacion">Financiación</SelectItem>
                 </SelectContent>
               </Select>
             </div>

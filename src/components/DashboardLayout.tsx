@@ -10,6 +10,7 @@ import {
   LogOut,
   CalendarDays,
   TrendingUp,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import clinicaLogo from "@/assets/clinica-dental-reche-logo.jpg";
@@ -25,6 +26,7 @@ const menuItems = [
   { icon: TrendingUp, label: "Ingresos", path: "/revenue" },
   { icon: Stethoscope, label: "Tratamientos", path: "/treatments" },
   { icon: Users, label: "Pacientes", path: "/patients" },
+  { icon: Clock, label: "Registro Horario", path: "/time-tracking" },
 ];
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {

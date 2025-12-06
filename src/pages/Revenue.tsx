@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Euro, FileText, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, parseISO, eachMonthOfInterval, isSameMonth } from "date-fns";
 import { es } from "date-fns/locale";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from "recharts";
 
 interface Invoice {
   id: string;
@@ -17,6 +18,7 @@ interface Invoice {
   total_amount: number;
   payment_date: string | null;
   created_at: string;
+  payment_method: string | null;
   patients: {
     full_name: string;
   } | null;
@@ -68,6 +70,48 @@ const Revenue = () => {
     if (filteredInvoices.length === 0) return 0;
     return totalRevenue / filteredInvoices.length;
   }, [filteredInvoices, totalRevenue]);
+
+  // Datos para gráfico mensual
+  const monthlyChartData = useMemo(() => {
+    const start = parseISO(startDate);
+    const end = parseISO(endDate);
+    const months = eachMonthOfInterval({ start, end });
+
+    return months.map((month) => {
+      const monthInvoices = filteredInvoices.filter((inv) => {
+        const invDate = new Date(inv.payment_date || inv.created_at);
+        return isSameMonth(invDate, month);
+      });
+      const total = monthInvoices.reduce((sum, inv) => sum + inv.total_amount, 0);
+      return {
+        month: format(month, "MMM yyyy", { locale: es }),
+        total,
+        count: monthInvoices.length,
+      };
+    });
+  }, [filteredInvoices, startDate, endDate]);
+
+  // Datos por método de pago
+  const paymentMethodData = useMemo(() => {
+    const methods: Record<string, number> = {};
+    filteredInvoices.forEach((inv) => {
+      const method = inv.payment_method || "Sin especificar";
+      methods[method] = (methods[method] || 0) + inv.total_amount;
+    });
+
+    const labels: Record<string, string> = {
+      efectivo: "Efectivo",
+      tarjeta: "Tarjeta",
+      transferencia: "Transferencia",
+      financiacion: "Financiación",
+      "Sin especificar": "Sin especificar",
+    };
+
+    return Object.entries(methods).map(([method, total]) => ({
+      method: labels[method] || method,
+      total,
+    }));
+  }, [filteredInvoices]);
 
   const setQuickRange = (range: string) => {
     const now = new Date();
@@ -194,6 +238,67 @@ const Revenue = () => {
               €{averageInvoice.toLocaleString("es-ES", { minimumFractionDigits: 2 })}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Media de facturación</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Gráficos */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Ingresos por Mes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {monthlyChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyChartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="month" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <Tooltip
+                    formatter={(value: number) => [`€${value.toFixed(2)}`, "Total"]}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No hay datos para mostrar</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Por Método de Pago</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {paymentMethodData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={paymentMethodData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis type="number" className="text-xs" />
+                  <YAxis dataKey="method" type="category" className="text-xs" width={100} />
+                  <Tooltip
+                    formatter={(value: number) => [`€${value.toFixed(2)}`, "Total"]}
+                    labelStyle={{ color: "hsl(var(--foreground))" }}
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Bar dataKey="total" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No hay datos para mostrar</p>
+            )}
           </CardContent>
         </Card>
       </div>
