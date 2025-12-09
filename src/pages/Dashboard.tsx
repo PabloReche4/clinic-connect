@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, ClipboardList, Stethoscope, Users, CalendarDays, TrendingUp } from "lucide-react";
+import { FileText, ClipboardList, Stethoscope, Users, CalendarDays, TrendingUp, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const Dashboard = () => {
@@ -68,6 +68,13 @@ const Dashboard = () => {
       icon: Users,
       path: "/patients",
       color: "bg-orange-500",
+    },
+    {
+      title: "Registro Horario",
+      description: "Control de fichajes",
+      icon: Clock,
+      path: "/time-tracking",
+      color: "bg-rose-500",
     },
   ];
 
