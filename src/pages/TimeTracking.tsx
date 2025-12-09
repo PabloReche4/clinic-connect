@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Clock, LogIn, LogOut, Calendar, User, Plus } from "lucide-react";
+import { Clock, LogIn, LogOut, Calendar, User, Plus, Play, Square } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
@@ -32,6 +32,11 @@ interface TimePair {
   exit: TimeRecord | null;
 }
 
+interface WorkerStatus {
+  isWorking: boolean;
+  lastEntry: TimeRecord | null;
+}
+
 const TimeTracking = () => {
   const [records, setRecords] = useState<TimeRecord[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -48,6 +53,7 @@ const TimeTracking = () => {
   const [formExitTime, setFormExitTime] = useState("");
   const [formNotes, setFormNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [clockingUserId, setClockingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRecords();
@@ -87,6 +93,74 @@ const TimeTracking = () => {
   const getProfileName = (userId: string) => {
     const profile = profiles.find((p) => p.id === userId);
     return profile?.full_name || "Usuario desconocido";
+  };
+
+  // Get worker status (working or not) for today
+  const getWorkerStatus = (userId: string): WorkerStatus => {
+    const today = format(new Date(), "yyyy-MM-dd");
+    const todayRecords = records.filter((r) => {
+      const recordDate = format(new Date(r.recorded_at), "yyyy-MM-dd");
+      return r.user_id === userId && recordDate === today;
+    }).sort((a, b) => new Date(a.recorded_at).getTime() - new Date(b.recorded_at).getTime());
+
+    let isWorking = false;
+    let lastEntry: TimeRecord | null = null;
+
+    todayRecords.forEach((record) => {
+      if (record.record_type === "entry") {
+        isWorking = true;
+        lastEntry = record;
+      } else if (record.record_type === "exit") {
+        isWorking = false;
+        lastEntry = null;
+      }
+    });
+
+    return { isWorking, lastEntry };
+  };
+
+  const handleClockIn = async (userId: string) => {
+    setClockingUserId(userId);
+    try {
+      const now = new Date();
+      const { error } = await supabase.from("time_records").insert({
+        user_id: userId,
+        record_type: "entry",
+        recorded_at: now.toISOString(),
+        source: "manual",
+      });
+
+      if (error) throw error;
+
+      toast.success(`Entrada registrada a las ${format(now, "HH:mm")}`);
+      fetchRecords();
+    } catch (error: any) {
+      toast.error("Error al registrar entrada: " + error.message);
+    } finally {
+      setClockingUserId(null);
+    }
+  };
+
+  const handleClockOut = async (userId: string) => {
+    setClockingUserId(userId);
+    try {
+      const now = new Date();
+      const { error } = await supabase.from("time_records").insert({
+        user_id: userId,
+        record_type: "exit",
+        recorded_at: now.toISOString(),
+        source: "manual",
+      });
+
+      if (error) throw error;
+
+      toast.success(`Salida registrada a las ${format(now, "HH:mm")}`);
+      fetchRecords();
+    } catch (error: any) {
+      toast.error("Error al registrar salida: " + error.message);
+    } finally {
+      setClockingUserId(null);
+    }
   };
 
   const handleManualSubmit = async (e: React.FormEvent) => {
@@ -273,7 +347,7 @@ const TimeTracking = () => {
         
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button variant="outline" className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Registro Manual
             </Button>
@@ -351,6 +425,76 @@ const TimeTracking = () => {
         </Dialog>
       </div>
 
+      {/* Worker Clock In/Out Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="w-5 h-5" />
+            Fichar - {format(new Date(), "d/M/yyyy", { locale: es })}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {profiles.length === 0 ? (
+            <p className="text-muted-foreground text-center py-4">No hay trabajadores registrados</p>
+          ) : (
+            <div className="space-y-3">
+              {profiles.map((profile) => {
+                const status = getWorkerStatus(profile.id);
+                const isClocking = clockingUserId === profile.id;
+                
+                return (
+                  <div 
+                    key={profile.id} 
+                    className="flex items-center justify-between p-4 border rounded-lg bg-card"
+                  >
+                    <div className="flex items-center gap-3">
+                      <User className="w-5 h-5 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{profile.full_name}</p>
+                        {status.isWorking && status.lastEntry && (
+                          <p className="text-sm text-muted-foreground">
+                            Entrada: {format(new Date(status.lastEntry.recorded_at), "HH:mm")}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {status.isWorking ? (
+                        <Badge variant="default" className="bg-green-500">Trabajando</Badge>
+                      ) : (
+                        <Badge variant="secondary">No fichado</Badge>
+                      )}
+                      {status.isWorking ? (
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => handleClockOut(profile.id)}
+                          disabled={isClocking}
+                          className="flex items-center gap-2"
+                        >
+                          <Square className="w-4 h-4" />
+                          {isClocking ? "..." : "Terminar"}
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="sm"
+                          onClick={() => handleClockIn(profile.id)}
+                          disabled={isClocking}
+                          className="flex items-center gap-2"
+                        >
+                          <Play className="w-4 h-4" />
+                          {isClocking ? "..." : "Comenzar"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -425,6 +569,7 @@ const TimeTracking = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Fecha</TableHead>
                     <TableHead>Trabajador</TableHead>
                     <TableHead>Entrada</TableHead>
                     <TableHead>Salida</TableHead>
@@ -443,6 +588,9 @@ const TimeTracking = () => {
                       
                       return (
                         <TableRow key={`${userId}-${index}`}>
+                          <TableCell>
+                            {format(new Date(dateKey), "d/M/yyyy")}
+                          </TableCell>
                           <TableCell className="font-medium">
                             <div className="flex items-center gap-2">
                               <User className="w-4 h-4 text-muted-foreground" />
