@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Clock, LogIn, LogOut, Calendar, User, Plus, Play, Square } from "lucide-react";
+import { Clock, LogIn, LogOut, Calendar, User, Plus, Play, Square, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
@@ -54,6 +54,7 @@ const TimeTracking = () => {
   const [formNotes, setFormNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [clockingUserId, setClockingUserId] = useState<string | null>(null);
+  const [deletingRecordId, setDeletingRecordId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchRecords();
@@ -160,6 +161,22 @@ const TimeTracking = () => {
       toast.error("Error al registrar salida: " + error.message);
     } finally {
       setClockingUserId(null);
+    }
+  };
+
+  const handleDeleteRecord = async (recordId: string) => {
+    if (!confirm("¿Eliminar este registro?")) return;
+    
+    setDeletingRecordId(recordId);
+    try {
+      const { error } = await supabase.from("time_records").delete().eq("id", recordId);
+      if (error) throw error;
+      toast.success("Registro eliminado");
+      fetchRecords();
+    } catch (error: any) {
+      toast.error("Error al eliminar: " + error.message);
+    } finally {
+      setDeletingRecordId(null);
     }
   };
 
@@ -575,6 +592,7 @@ const TimeTracking = () => {
                     <TableHead>Salida</TableHead>
                     <TableHead>Duración</TableHead>
                     <TableHead>Origen</TableHead>
+                    <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -633,6 +651,32 @@ const TimeTracking = () => {
                             <Badge variant="outline">
                               {pair.entry?.source === "manual" || pair.exit?.source === "manual" ? "Manual" : "Dispositivo"}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              {pair.entry && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteRecord(pair.entry!.id)}
+                                  disabled={deletingRecordId === pair.entry.id}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {pair.exit && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteRecord(pair.exit!.id)}
+                                  disabled={deletingRecordId === pair.exit.id}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
