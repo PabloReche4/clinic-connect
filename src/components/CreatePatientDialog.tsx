@@ -4,22 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 
-interface PatientGroup {
-  id: string;
-  name: string;
-}
-
 interface CreatePatientDialogProps {
   onPatientCreated: () => void;
-  groups: PatientGroup[];
 }
 
-export const CreatePatientDialog = ({ onPatientCreated, groups }: CreatePatientDialogProps) => {
+export const CreatePatientDialog = ({ onPatientCreated }: CreatePatientDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -29,7 +22,6 @@ export const CreatePatientDialog = ({ onPatientCreated, groups }: CreatePatientD
     address: "",
     dni: "",
     birth_date: "",
-    group_id: "",
     notes: "",
     allergies: "",
     medical_conditions: "",
@@ -49,7 +41,6 @@ export const CreatePatientDialog = ({ onPatientCreated, groups }: CreatePatientD
         address: formData.address || null,
         dni: formData.dni || null,
         birth_date: formData.birth_date || null,
-        group_id: formData.group_id || null,
         notes: formData.notes || null,
         allergies: formData.allergies || null,
         medical_conditions: formData.medical_conditions || null,
@@ -68,7 +59,6 @@ export const CreatePatientDialog = ({ onPatientCreated, groups }: CreatePatientD
         address: "",
         dni: "",
         birth_date: "",
-        group_id: "",
         notes: "",
         allergies: "",
         medical_conditions: "",
@@ -140,31 +130,14 @@ export const CreatePatientDialog = ({ onPatientCreated, groups }: CreatePatientD
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="birth_date">Fecha de Nacimiento</Label>
-              <Input
-                id="birth_date"
-                type="date"
-                value={formData.birth_date}
-                onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="group_id">Grupo de Pacientes</Label>
-              <Select value={formData.group_id} onValueChange={(value) => setFormData({ ...formData, group_id: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar grupo" />
-                </SelectTrigger>
-                <SelectContent>
-                  {groups.map((group) => (
-                    <SelectItem key={group.id} value={group.id}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="birth_date">Fecha de Nacimiento</Label>
+            <Input
+              id="birth_date"
+              type="date"
+              value={formData.birth_date}
+              onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+            />
           </div>
 
           <div className="space-y-2">

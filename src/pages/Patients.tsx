@@ -25,21 +25,14 @@ interface Patient {
   } | null;
 }
 
-interface PatientGroup {
-  id: string;
-  name: string;
-}
-
 const Patients = () => {
   const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
-  const [groups, setGroups] = useState<PatientGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     fetchPatients();
-    fetchGroups();
   }, []);
 
   const fetchPatients = async () => {
@@ -63,19 +56,6 @@ const Patients = () => {
     }
   };
 
-  const fetchGroups = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("patient_groups")
-        .select("id, name")
-        .order("name");
-
-      if (error) throw error;
-      setGroups(data || []);
-    } catch (error: any) {
-      toast.error("Error al cargar grupos: " + error.message);
-    }
-  };
 
   const filteredPatients = useMemo(() => {
     if (!searchTerm) return patients;
@@ -105,7 +85,7 @@ const Patients = () => {
           <h1 className="text-3xl font-bold">Pacientes</h1>
           <p className="text-muted-foreground">Gestión de pacientes de la clínica</p>
         </div>
-        <CreatePatientDialog onPatientCreated={fetchPatients} groups={groups} />
+        <CreatePatientDialog onPatientCreated={fetchPatients} />
       </div>
 
       <div className="relative max-w-md">
@@ -125,7 +105,7 @@ const Patients = () => {
               <p className="text-muted-foreground mb-4">
                 {searchTerm ? "No se encontraron pacientes" : "No hay pacientes registrados"}
               </p>
-              {!searchTerm && <CreatePatientDialog onPatientCreated={fetchPatients} groups={groups} />}
+              {!searchTerm && <CreatePatientDialog onPatientCreated={fetchPatients} />}
             </CardContent>
           </Card>
         ) : (
