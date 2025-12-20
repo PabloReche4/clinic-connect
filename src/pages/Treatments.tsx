@@ -15,6 +15,7 @@ interface Treatment {
   description: string | null;
   price: number;
   duration_minutes: number | null;
+  sessions_count: number | null;
   is_active: boolean;
 }
 
@@ -119,6 +120,11 @@ const Treatments = () => {
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="w-4 h-4" />
                       <span>{treatment.duration_minutes} minutos</span>
+                    </div>
+                  )}
+                  {treatment.sessions_count && treatment.sessions_count > 1 && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>📋 {treatment.sessions_count} sesiones</span>
                     </div>
                   )}
                   <Button variant="outline" className="w-full mt-2" onClick={() => setEditingTreatment(treatment)}>
