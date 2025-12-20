@@ -128,7 +128,7 @@ const TimeTracking = () => {
         user_id: userId,
         record_type: "entry",
         recorded_at: now.toISOString(),
-        source: "manual",
+        source: "web",
       });
 
       if (error) throw error;
@@ -150,7 +150,7 @@ const TimeTracking = () => {
         user_id: userId,
         record_type: "exit",
         recorded_at: now.toISOString(),
-        source: "manual",
+        source: "web",
       });
 
       if (error) throw error;
@@ -447,7 +447,7 @@ const TimeTracking = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="w-5 h-5" />
-            Fichar - {format(new Date(), "d/M/yyyy", { locale: es })}
+            Registrar - {format(new Date(), "d/M/yyyy", { locale: es })}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -479,7 +479,7 @@ const TimeTracking = () => {
                       {status.isWorking ? (
                         <Badge variant="default" className="bg-green-500">Trabajando</Badge>
                       ) : (
-                        <Badge variant="secondary">No fichado</Badge>
+                        <Badge variant="secondary">Sin registrar</Badge>
                       )}
                       {status.isWorking ? (
                         <Button 
@@ -649,7 +649,7 @@ const TimeTracking = () => {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">
-                              {pair.entry?.source === "manual" || pair.exit?.source === "manual" ? "Manual" : "Dispositivo"}
+                              {pair.entry?.source === "manual" || pair.exit?.source === "manual" ? "Manual" : pair.entry?.source === "web" || pair.exit?.source === "web" ? "Web" : "Dispositivo"}
                             </Badge>
                           </TableCell>
                           <TableCell>
