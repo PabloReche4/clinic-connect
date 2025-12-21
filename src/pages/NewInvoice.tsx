@@ -6,9 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Patient {
   id: string;
@@ -46,6 +49,7 @@ const NewInvoice = () => {
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
   const [loading, setLoading] = useState(false);
+  const [budgetOpen, setBudgetOpen] = useState(false);
 
   useEffect(() => {
     fetchPatients();
@@ -178,18 +182,52 @@ const NewInvoice = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="budget">Presupuesto Aprobado</Label>
-              <Select value={selectedBudgetId} onValueChange={setSelectedBudgetId} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar presupuesto" />
-                </SelectTrigger>
-                <SelectContent>
-                  {budgets.map((budget) => (
-                    <SelectItem key={budget.id} value={budget.id}>
-                      {budget.patients.full_name} - €{budget.total_amount.toFixed(2)} ({new Date(budget.created_at).toLocaleDateString()})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={budgetOpen} onOpenChange={setBudgetOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={budgetOpen}
+                    className="w-full justify-between"
+                  >
+                    {selectedBudgetId
+                      ? (() => {
+                          const b = budgets.find((b) => b.id === selectedBudgetId);
+                          return b ? `${b.patients.full_name} - €${b.total_amount.toFixed(2)}` : "Seleccionar presupuesto...";
+                        })()
+                      : "Seleccionar presupuesto..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0 bg-popover" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar presupuesto..." />
+                    <CommandList>
+                      <CommandEmpty>No se encontraron presupuestos.</CommandEmpty>
+                      <CommandGroup>
+                        {budgets.map((budget) => (
+                          <CommandItem
+                            key={budget.id}
+                            value={`${budget.patients.full_name} ${budget.total_amount}`}
+                            onSelect={() => {
+                              setSelectedBudgetId(budget.id);
+                              setBudgetOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedBudgetId === budget.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {budget.patients.full_name} - €{budget.total_amount.toFixed(2)} ({new Date(budget.created_at).toLocaleDateString()})
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {patientId && (
