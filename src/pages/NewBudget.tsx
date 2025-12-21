@@ -39,6 +39,7 @@ const NewBudget = () => {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<BudgetItem[]>([]);
   const [patientOpen, setPatientOpen] = useState(false);
+  const [treatmentOpenIndex, setTreatmentOpenIndex] = useState<number | null>(null);
   const [formData, setFormData] = useState({
     patient_id: "",
     valid_until: "",
@@ -282,21 +283,49 @@ const NewBudget = () => {
                 <div key={index} className="flex gap-4 items-end border-b pb-4 last:border-0">
                   <div className="flex-1 space-y-2">
                     <Label>Tratamiento *</Label>
-                    <Select
-                      value={item.treatment_id}
-                      onValueChange={(value) => updateItem(index, "treatment_id", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {treatments.map((treatment) => (
-                          <SelectItem key={treatment.id} value={treatment.id}>
-                            {treatment.name} - €{treatment.price.toFixed(2)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={treatmentOpenIndex === index} onOpenChange={(open) => setTreatmentOpenIndex(open ? index : null)}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={treatmentOpenIndex === index}
+                          className="w-full justify-between"
+                        >
+                          {item.treatment_id
+                            ? treatments.find((t) => t.id === item.treatment_id)?.name || "Seleccionar..."
+                            : "Seleccionar tratamiento..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0 bg-popover" align="start">
+                        <Command>
+                          <CommandInput placeholder="Buscar tratamiento..." />
+                          <CommandList>
+                            <CommandEmpty>No se encontraron tratamientos.</CommandEmpty>
+                            <CommandGroup>
+                              {treatments.map((treatment) => (
+                                <CommandItem
+                                  key={treatment.id}
+                                  value={treatment.name}
+                                  onSelect={() => {
+                                    updateItem(index, "treatment_id", treatment.id);
+                                    setTreatmentOpenIndex(null);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      item.treatment_id === treatment.id ? "opacity-100" : "opacity-0"
+                                    )}
+                                  />
+                                  {treatment.name} - €{treatment.price.toFixed(2)}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                   <div className="w-24 space-y-2">
                     <Label>Cantidad</Label>

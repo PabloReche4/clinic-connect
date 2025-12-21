@@ -8,11 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Search, Clock, User, Phone, Trash2 } from "lucide-react";
+import { Plus, Search, Clock, User, Phone, Trash2, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
 import { format, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -55,6 +58,7 @@ const Appointments = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [patientSearchOpen, setPatientSearchOpen] = useState(false);
 
   // Form state
   const [selectedPatientId, setSelectedPatientId] = useState<string>("new");
@@ -245,19 +249,66 @@ const Appointments = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label>Paciente</Label>
-                <Select value={selectedPatientId} onValueChange={handlePatientSelect}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar paciente" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">Nuevo paciente</SelectItem>
-                    {patients.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.full_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Popover open={patientSearchOpen} onOpenChange={setPatientSearchOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={patientSearchOpen}
+                      className="w-full justify-between"
+                    >
+                      {selectedPatientId === "new"
+                        ? "Nuevo paciente"
+                        : selectedPatientId
+                        ? patients.find((p) => p.id === selectedPatientId)?.full_name
+                        : "Seleccionar paciente..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 bg-popover" align="start">
+                    <Command>
+                      <CommandInput placeholder="Buscar paciente..." />
+                      <CommandList>
+                        <CommandEmpty>No se encontraron pacientes.</CommandEmpty>
+                        <CommandGroup>
+                          <CommandItem
+                            value="nuevo paciente"
+                            onSelect={() => {
+                              handlePatientSelect("new");
+                              setPatientSearchOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedPatientId === "new" ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            Nuevo paciente
+                          </CommandItem>
+                          {patients.map((p) => (
+                            <CommandItem
+                              key={p.id}
+                              value={p.full_name}
+                              onSelect={() => {
+                                handlePatientSelect(p.id);
+                                setPatientSearchOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  selectedPatientId === p.id ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {p.full_name}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
